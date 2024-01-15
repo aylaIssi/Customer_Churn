@@ -98,7 +98,7 @@ def remove_outlier(dataframe, col_name):
     df_without_outliers = dataframe[~((dataframe[col_name] < low_limit) | (dataframe[col_name] > up_limit))]
     return df_without_outliers
 
-# değişken yakalama
+# Variable capturing
 def grab_col_names(dataframe, cat_th=10, car_th=20):
     """
 
@@ -190,14 +190,14 @@ def num_summary(dataframe, numerical_col, plot=False):
         plt.title(numerical_col)
         plt.show(block=True)
 
-# hedef değişken analizi
+# Target Variable Analysis
 def target_summary_with_num(dataframe, target, numerical_col):
     print(dataframe.groupby(target).agg({numerical_col: "mean"}))
 
 def target_summary_with_cat(dataframe, target, categorical_col):
     print(pd.DataFrame({"TARGET_MEAN": dataframe.groupby(categorical_col)[target].mean()}), end="\n\n\n")
 
-# eksik değerler
+# Missing values
 def missing_values_table(dataframe, na_name=False):
     na_columns = [col for col in dataframe.columns if dataframe[col].isnull().sum() > 0]
 
@@ -221,7 +221,7 @@ def missing_vs_target(dataframe, target, na_columns):
         print(pd.DataFrame({"TARGET_MEAN": temp_df.groupby(col)[target].mean(),
                             "Count": temp_df.groupby(col)[target].count()}), end="\n\n\n")
 
-# encoding
+# Encoding
 def label_encoder(dataframe, binary_col):
     labelencoder = LabelEncoder()
     dataframe[binary_col] = labelencoder.fit_transform(dataframe[binary_col])
@@ -252,7 +252,7 @@ def rare_encoder(dataframe, rare_perc):
     return temp_df
 
 #########################
-# Verinin Okunması
+# Data reading
 #########################
 
 df_ = pd.read_csv("datasets/Telco-Customer-Churn.csv")
@@ -261,18 +261,18 @@ df = df_.copy()
 df.head()
 
 #########################
-# Keşifçi Veri Analizi
+# Exploratory Data Analysis (EDA)
 #########################
 
 check_dataframe(df)
 
-# Numerik ve kategorik değişkenler
+# Numeric and categorical variables
 
 cat_cols, num_cols, cat_but_car = grab_col_names(df)
 
 cat_cols = [col for col in cat_cols if col not in ["Churn"]]
 
-# Gerekli düzenlemeler (Tip hatası olan değişkenler gibi)
+# Necessary adjustment (Variables with type errors)
 
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
 
@@ -281,7 +281,7 @@ df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
 
 label_encoder(df, 'Churn')
 
-# Numerik ve kategorik değişkenlerin veri içindeki dağılımı
+# Distribution of Numeric and Categorical Variables in the Data
 
 for col in cat_cols:
     cat_summary(df, col)
@@ -289,12 +289,12 @@ for col in cat_cols:
 for col in num_cols:
     num_summary(df, col)
 
-# Kategorik değişkenler ile hedef değişken incelemesi
+# Categorical Variables Analysis with Target Variable
 
 for col in cat_cols:
     target_summary_with_cat(df, "Churn", col)
 
-# Aykırı gözlem var mı
+# Are there any outliers
 
 for col in num_cols:
     print(col, outlier_thresholds(df, col))
@@ -302,39 +302,30 @@ for col in num_cols:
 for col in num_cols:
     print(col, check_outlier(df, col))
 
-# Eksik gözlem var mı
+# Are there any missing observations
 
 missing_values_table(df, True)
 
 
-df.isnull().values.any() # eksik gozlem var mı yok mu sorgusu
-
-df.isnull().sum() # degiskenlerdeki eksik deger sayisi
-
-df.notnull().sum() # degiskenlerdeki tam deger sayisi
-
-df.isnull().sum().sum() # veri setindeki toplam eksik deger sayisi
-
-df[df.isnull().any(axis=1)] # en az bir tane eksik degere sahip olan gözlem birimleri
-
-df[df.notnull().all(axis=1)] # tam olan gözlem birimleri
-
+df.isnull().values.any() 
+df.isnull().sum()
+df.notnull().sum() 
+df.isnull().sum().sum() 
+df[df.isnull().any(axis=1)] 
+df[df.notnull().all(axis=1)] 
 
 #########################
 # Feature Engineering
 #########################
 
-# Eksik ve aykırı gözlemler için gerekli işlemler
+# Necessary procedures for handling missing and outlier observations
 
-df[df['TotalCharges'].isnull()] #Tenure 0, dolayısıyla silinebilir
-
+df[df['TotalCharges'].isnull()] #Tenure is 0, therefore it can be deleted
 df.dropna(inplace=True)
-
 df.drop(columns='customerID', inplace=True)
-
 df.head()
 
-# Yeni değişkenler
+# New variables
 
 df['TotalServices'] = (df[['PhoneService', 'InternetService', 'OnlineSecurity',
                                        'OnlineBackup', 'DeviceProtection', 'TechSupport',
@@ -351,7 +342,7 @@ cat_cols, num_cols, cat_but_car = grab_col_names(df)
 
 cat_cols = [col for col in cat_cols if col not in ["Churn"]]
 
-# Encoding işlemleri
+# Encoding processes
 
 binary_cols = [col for col in df.columns if df[col].dtypes == "O" and df[col].nunique() == 2]
 
@@ -363,7 +354,7 @@ df = one_hot_encoder(df, cat_cols, drop_first=True)
 
 df.head()
 
-# Numerik değişkenler için standartlaştırma
+# Standardization of numeric variables
 
 scaler = StandardScaler()
 df[num_cols] = scaler.fit_transform(df[num_cols])
@@ -371,13 +362,13 @@ df[num_cols] = scaler.fit_transform(df[num_cols])
 df.head()
 
 #########################
-# Modelleme
+# Modeling
 #########################
 
 y = df["Churn"]
 X = df.drop(["Churn"], axis=1)
 
-# Sınıflandırma algoritmaları ile model ve skor incelenmesi
+# Examination of Models and Scores with Classification Algorithms
 
 ### Random Forests
 rf_model = RandomForestClassifier()
@@ -388,7 +379,7 @@ cv_results['test_accuracy'].mean()
 cv_results['test_f1'].mean()
 cv_results['test_roc_auc'].mean()
 
-# Hiperparametre optimizasyonu
+# Hyperparameter optimization
 
 rf_params = {"max_depth": [5, 8, None],
              "max_features": [3, 5, 7, "auto"],
@@ -416,7 +407,7 @@ cv_results['test_accuracy'].mean()
 cv_results['test_f1'].mean()
 cv_results['test_roc_auc'].mean()
 
-# Hiperparametre optimizasyonu
+# Hyperparameter optimization
 
 gbm_params = {"learning_rate": [0.01, 0.1],
               "max_depth": [3, 8, 10],
@@ -443,7 +434,7 @@ cv_results['test_accuracy'].mean()
 cv_results['test_f1'].mean()
 cv_results['test_roc_auc'].mean()
 
-# Hiperparametre optimizasyonu
+# Hyperparameter optimization
 
 xgboost_params = {"learning_rate": [0.1, 0.01],
                   "max_depth": [5, 8],
@@ -469,7 +460,7 @@ cv_results['test_accuracy'].mean()
 cv_results['test_f1'].mean()
 cv_results['test_roc_auc'].mean()
 
-# Hiperparametre optimizasyonu
+# Hyperparameter optimization
 
 lgbm_params = {"learning_rate": [0.01, 0.1],
                "n_estimators": [100, 300, 500, 1000],
